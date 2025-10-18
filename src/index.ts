@@ -1,10 +1,18 @@
-import "dotenv/config";
-import { drizzle } from "drizzle-orm/node-postgres";
-import { Pool } from "pg";
+import app from "./app";
+import config from "./config/config";
+import { connectDB } from "./db";
 
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL!,
-});
-const db = drizzle({ client: pool });
+const startServer = async () => {
+  try {
+    await connectDB();
 
-export { db };
+    app.listen(config.PORT, () => {
+      console.log("🚀 Server is running on port " + `${config.PORT}`);
+    });
+  } catch (error) {
+    console.error("❌ Failed to connect to database:", error);
+    process.exit(1);
+  }
+};
+
+startServer();
