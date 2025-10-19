@@ -1,8 +1,8 @@
-import { z } from "zod";
+import { InferSelectModel } from "drizzle-orm";
 import { pgTable, varchar, uuid, timestamp } from "drizzle-orm/pg-core";
 
 export const usersTable = pgTable("users", {
-  id: uuid().primaryKey(),
+  id: uuid().primaryKey().defaultRandom(),
   fullName: varchar({ length: 255 }).notNull(),
   email: varchar({ length: 255 }).notNull().unique(),
   password: varchar({ length: 255 }).notNull(),
@@ -11,4 +11,5 @@ export const usersTable = pgTable("users", {
   updatedAt: timestamp("updated_at").defaultNow().notNull()
 });
 
-export type User = z.infer<typeof usersTable>;
+export type SelectUser = InferSelectModel<typeof usersTable>;
+export type RegisterUserInput = Omit<SelectUser, "id" | "createdAt" | "updatedAt" | "refreshToken">;

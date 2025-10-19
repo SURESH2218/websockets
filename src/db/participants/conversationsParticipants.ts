@@ -3,7 +3,7 @@ import { pgTable, uuid } from "drizzle-orm/pg-core";
 import { conversationsTable, usersTable } from "../schema";
 
 export const conversationsParticipants = pgTable("conversations_participants", {
-  id: uuid().primaryKey(),
+  id: uuid().primaryKey().defaultRandom(),
   conversationId: uuid()
     .notNull()
     .references(() => conversationsTable.id),
@@ -11,5 +11,5 @@ export const conversationsParticipants = pgTable("conversations_participants", {
     .notNull()
     .references(() => usersTable.id),
   createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull()
 });
