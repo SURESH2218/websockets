@@ -1,12 +1,19 @@
 import app from "./app";
-import config from "./config/config";
 import { connectDB } from "./db";
+import { createServer } from "http";
+import config from "./config/config";
+import { initializeSocket } from "./config/socket";
+
+const httpServer = createServer(app);
+const io = initializeSocket(httpServer);
+
+app.set("io", io);
 
 const startServer = async () => {
   try {
     await connectDB();
 
-    app.listen(config.PORT, () => {
+    httpServer.listen(config.PORT, () => {
       console.log("🚀 Server is running on port " + `${config.PORT}`);
     });
   } catch (error) {
