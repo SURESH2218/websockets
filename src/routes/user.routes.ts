@@ -3,7 +3,8 @@ import {
   registerUser,
   loginUser,
   logoutUser,
-  refreshAccessToken
+  refreshAccessToken,
+  getCurrentUser
 } from "../controllers/user.controller";
 import { authenticate } from "../middlewares/auth.middleware";
 
@@ -15,6 +16,7 @@ router.post("/login", loginUser);
 router.post("/refresh", refreshAccessToken);
 
 // Protected routes
+router.get("/me", authenticate, getCurrentUser);
 router.post("/logout", authenticate, logoutUser);
 
 export default router;

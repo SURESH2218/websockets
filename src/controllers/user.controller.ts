@@ -159,4 +159,32 @@ const refreshAccessToken = async (req: Request, res: Response, next: NextFunctio
   }
 };
 
-export { registerUser, loginUser, logoutUser, refreshAccessToken };
+// get current user
+const getCurrentUser = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const userId = req.user!.userId;
+
+    const [user] = await db
+      .select({
+        id: usersTable.id,
+        fullName: usersTable.fullName,
+        email: usersTable.email,
+        createdAt: usersTable.createdAt
+      })
+      .from(usersTable)
+      .where(eq(usersTable.id, userId))
+      .limit(1);
+
+    if (!user) {
+      throw createHttpError(404, "User not found");
+    }
+
+    res.status(200).json({
+      success: true,
+      user
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+export { registerUser, loginUser, logoutUser, refreshAccessToken, getCurrentUser };
