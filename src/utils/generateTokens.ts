@@ -14,7 +14,7 @@ interface GeneratedTokens {
 
 //   Generate access and refresh tokens
 export const generateTokens = (payload: TokenPayload): GeneratedTokens => {
-  const accessToken = jwt.sign(payload, config.ACCESS_TOKEN_SECRET, { expiresIn: "15m" });
+  const accessToken = jwt.sign(payload, config.ACCESS_TOKEN_SECRET, { expiresIn: "60m" });
 
   const refreshToken = jwt.sign(payload, config.REFRESH_TOKEN_SECRET, { expiresIn: "7d" });
 
