@@ -13,6 +13,8 @@ import {
 export const getConversations = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const userId = req.user!.userId;
+    const limit = parseInt(req.query.limit as string) || 20;
+    const offset = parseInt(req.query.offset as string) || 0;
 
     // First get user's conversations
     const userConversations = await db
@@ -21,7 +23,16 @@ export const getConversations = async (req: Request, res: Response, next: NextFu
       .where(eq(conversationsParticipants.userId, userId));
 
     if (userConversations.length === 0) {
-      return res.status(200).json({ success: true, conversations: [] });
+      return res.status(200).json({ 
+        success: true, 
+        conversations: [],
+        pagination: {
+          limit,
+          offset,
+          total: 0,
+          hasMore: false
+        }
+      });
     }
 
     const conversationIds = userConversations.map((c) => c.conversationId);
@@ -81,9 +92,26 @@ export const getConversations = async (req: Request, res: Response, next: NextFu
       };
     });
 
+    // Sort by last message time (most recent first)
+    grouped.sort((a, b) => {
+      const timeA = a.lastMessage?.createdAt ? new Date(a.lastMessage.createdAt).getTime() : 0;
+      const timeB = b.lastMessage?.createdAt ? new Date(b.lastMessage.createdAt).getTime() : 0;
+      return timeB - timeA;
+    });
+
+    // Apply pagination
+    const total = grouped.length;
+    const paginatedConversations = grouped.slice(offset, offset + limit);
+
     res.status(200).json({
       success: true,
-      conversations: grouped
+      conversations: paginatedConversations,
+      pagination: {
+        limit,
+        offset,
+        total,
+        hasMore: offset + paginatedConversations.length < total
+      }
     });
   } catch (error) {
     next(error);
@@ -160,6 +188,58 @@ export const getOrCreateConversation = async (req: Request, res: Response, next:
       message: "Conversation created successfully",
       conversation,
       isNew: true
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Create a group conversation
+export const createGroup = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const userId = req.user!.userId;
+    const { groupName, participantIds } = req.body;
+
+    if (!participantIds || !Array.isArray(participantIds) || participantIds.length === 0) {
+      throw createHttpError(400, "participantIds array is required and must not be empty");
+    }
+
+    if (participantIds.length > 50) {
+      throw createHttpError(400, "Maximum 50 participants allowed in a group");
+    }
+
+    // Verify all participants exist
+    const participants = await db
+      .select({ id: usersTable.id })
+      .from(usersTable)
+      .where(inArray(usersTable.id, participantIds));
+
+    if (participants.length !== participantIds.length) {
+      throw createHttpError(400, "One or more participant IDs are invalid");
+    }
+
+    // Create group conversation
+    const [conversation] = await db
+      .insert(conversationsTable)
+      .values({ 
+        groupType: "group",
+        groupAdmin: userId
+      })
+      .returning();
+
+    // Add all participants (including creator)
+    const allParticipants = [userId, ...participantIds];
+    await db.insert(conversationsParticipants).values(
+      allParticipants.map(participantId => ({
+        conversationId: conversation.id,
+        userId: participantId
+      }))
+    );
+
+    res.status(201).json({
+      success: true,
+      message: "Group created successfully",
+      conversation
     });
   } catch (error) {
     next(error);
