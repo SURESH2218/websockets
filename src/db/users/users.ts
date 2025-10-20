@@ -7,8 +7,8 @@ export const usersTable = pgTable("users", {
   email: varchar({ length: 255 }).notNull().unique(),
   password: varchar({ length: 255 }).notNull(),
   refreshToken: varchar({ length: 255 }),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull()
+  createdAt: timestamp("created_at", { withTimezone: true, mode: "string" }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true, mode: "string" }).defaultNow().notNull()
 });
 
 export type SelectUser = InferSelectModel<typeof usersTable>;

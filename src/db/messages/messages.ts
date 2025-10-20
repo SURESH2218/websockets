@@ -11,5 +11,5 @@ export const conversationMessages = pgTable("conversation_messages", {
   content: text(),
   senderId: uuid("sender_id").references(() => usersTable.id),
   messageType: MessageType(),
-  createdAt: timestamp("created_at").defaultNow().notNull()
+  createdAt: timestamp("created_at", { withTimezone: true, mode: "string" }).defaultNow().notNull()
 });
